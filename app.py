@@ -2,11 +2,32 @@ import os
 import sys
 import json
 from datetime import datetime
+from chatterbot import ChatBot
 
 import requests
 from flask import Flask, request
 
 app = Flask(__name__)
+
+# Create a new instance of a ChatBot
+bot = ChatBot(
+    'Default Response Example Bot',
+    storage_adapter='chatterbot.storage.SQLStorageAdapter',
+    logic_adapters=[
+        {
+            'import_path': 'chatterbot.logic.BestMatch'
+        },
+        {
+            'import_path': 'chatterbot.logic.LowConfidenceAdapter',
+            'threshold': 0.65,
+            'default_response': 'I am sorry, but I do not understand.'
+        }
+    ],
+    trainer='chatterbot.trainers.ListTrainer'
+)
+
+# Get a response for some unexpected input
+
 
 
 @app.route('/', methods=['GET'])
@@ -39,8 +60,8 @@ def webhook():
                     sender_id = messaging_event["sender"]["id"]        # the facebook ID of the person sending you the message
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
-
-                    send_message(sender_id, "roger that!")
+                    response = bot.get_response(message_text)
+                    send_message(sender_id, response)
 
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
